@@ -98,6 +98,17 @@ fig2 = px.box(f[f['Brand']!='MeSpace'], x='Brand', y='PctDiff',
                   'REED': 'red'
               })
 fig2.add_hline(y=0, line_dash='dash')
+fig2.update_yaxes(tickformat='.0%')
+
+# --- format hover template for box traces ---
+for tr in fig2.data:
+    # Apply only to box traces
+    if tr.type == 'box':
+        tr.hovertemplate = (
+            'Brand=%{x}<br>' +
+            'PctDiff=%{y:.1%}<extra></extra>'
+        )
+
 st.plotly_chart(fig2, use_container_width=True)
 
 ### ----- 7. Top5 テーブル & 画像保存 -----

@@ -1,0 +1,10 @@
+# Python virtual environments
+venv/
+.env/
+
+# macOS
+.DS_Store
+
+# Streamlit artifacts
+*.png
+__pycache__/

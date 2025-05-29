@@ -12,10 +12,8 @@ df = df[
     (df['ARR (Lowest)'] <= 4000)
 ]
 
-# サイズ帯
-bins = [0,1,3,5,10,20,100]
-labels = ['<1','1-3','3-5','5-10','10-20','20+']
-df['SizeBucket'] = pd.cut(df['Size'], bins=bins, labels=labels)
+# サイズ帯を件数ベースで等分割
+df['SizeBucket'], bins_used = pd.qcut(df['Size'], q=6, retbins=True, duplicates='drop')
 
 # # 簡易エリアタグ
 # def area(branch):

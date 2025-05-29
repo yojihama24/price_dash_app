@@ -14,14 +14,14 @@ bins = [0,1,3,5,10,20,100]
 labels = ['<1','1-3','3-5','5-10','10-20','20+']
 df['SizeBucket'] = pd.cut(df['Size'], bins=bins, labels=labels)
 
-# 簡易エリアタグ
-def area(branch):
-    for kw in ['Pattaya','PTY','Chon','Laem','Pattaya']:
-        if kw.lower() in branch.lower(): return 'Pattaya/Chon'
-    for kw in ['Phuket','PTG']:
-        if kw.lower() in branch.lower(): return 'Phuket'
-    return 'Bangkok'
-df['Area'] = df['Branch'].apply(area)
+# # 簡易エリアタグ
+# def area(branch):
+#     for kw in ['Pattaya','PTY','Chon','Laem','Pattaya']:
+#         if kw.lower() in branch.lower(): return 'Pattaya/Chon'
+#     for kw in ['Phuket','PTG']:
+#         if kw.lower() in branch.lower(): return 'Phuket'
+#     return 'Bangkok'
+# df['Area'] = df['Branch'].apply(area)
 
 ### ----- 2. SIDEBAR コントロール -----
 st.sidebar.header('Filters')
@@ -34,14 +34,68 @@ ac_options = st.sidebar.multiselect('A/C', df['A/C'].unique().tolist(),
 type_options = st.sidebar.multiselect('Type', df['Type'].unique().tolist(),
                                       default=df['Type'].unique().tolist())
 
-# Size 誤差スライダー
-size_min, size_max = int(df['Size'].min()), int(df['Size'].max())
-size_range = st.sidebar.slider('Size range (m²)', size_min, size_max,
-                               (size_min, size_max))
+# ---------------------------------
+# Size range: number inputs + slider
+# ---------------------------------
+size_abs_min, size_abs_max = int(df['Size'].min()), int(df['Size'].max())
 
-# エリア
-area_sel = st.sidebar.multiselect('Area', df['Area'].unique().tolist(),
-                                  default=df['Area'].unique().tolist())
+# セッション初期化
+if 'size_min' not in st.session_state:
+    st.session_state['size_min'] = size_abs_min
+if 'size_max' not in st.session_state:
+    st.session_state['size_max'] = size_abs_max
+
+st.sidebar.write('Size range (m²)')
+col_min, col_max = st.sidebar.columns(2)
+
+# 数値入力ボックス
+with col_min:
+    st.session_state['size_min'] = st.number_input(
+        'Min', value=st.session_state['size_min'],
+        min_value=size_abs_min, max_value=size_abs_max, step=1, key='size_min_box'
+    )
+with col_max:
+    st.session_state['size_max'] = st.number_input(
+        'Max', value=st.session_state['size_max'],
+        min_value=size_abs_min, max_value=size_abs_max, step=1, key='size_max_box'
+    )
+
+# スライダー
+size_range = st.sidebar.slider(
+    'Adjust with slider', size_abs_min, size_abs_max,
+    (st.session_state['size_min'], st.session_state['size_max']),
+    key='size_slider'
+)
+
+# 双方向同期
+if size_range != (st.session_state['size_min'], st.session_state['size_max']):
+    st.session_state['size_min'], st.session_state['size_max'] = size_range
+else:
+    size_range = (st.session_state['size_min'], st.session_state['size_max'])
+
+# ---------------------------------
+# Branch フィルタ（Select‑all 対応）
+# ---------------------------------
+branches_all = sorted(df['Branch'].unique().tolist())
+
+# セッション初期化
+if 'branch_sel' not in st.session_state:
+    st.session_state['branch_sel'] = branches_all
+
+# ボタン行
+col_a, col_b = st.sidebar.columns(2)
+if col_a.button('Select all'):
+    st.session_state['branch_sel'] = branches_all
+if col_b.button('Clear'):
+    st.session_state['branch_sel'] = []
+
+# マルチセレクト本体
+branch_sel = st.sidebar.multiselect(
+    'Branch',
+    options=branches_all,
+    default=st.session_state['branch_sel'],
+    key='branch_sel'
+)
 
 # Rack / Lowest トグル
 rate_col = st.sidebar.radio('Rate column', ['ARR (Rack Rate)', 'ARR (Lowest)'])
@@ -51,7 +105,7 @@ f = df[
     (df['A/C'].isin(ac_options)) &
     (df['Type'].isin(type_options)) &
     (df['Size'].between(*size_range)) &
-    (df['Area'].isin(area_sel))
+    (df['Branch'].isin(branch_sel))
 ].copy()
 
 ### ----- 4. MeSpace 基準との差分 -----

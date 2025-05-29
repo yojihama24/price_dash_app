@@ -7,7 +7,10 @@ import plotly.express as px
 df = pd.read_excel('/Users/yojihamanishi/Library/Mobile Documents/com~apple~CloudDocs/仕事/Database/Price_List.xlsx', sheet_name='Data Base')
 
 # 異常値除外
-df = df[df['ARR (Rack Rate)']<=4000]
+df = df[
+    (df['ARR (Rack Rate)']<=4000) &
+    (df['ARR (Lowest)'] <= 4000)
+]
 
 # サイズ帯
 bins = [0,1,3,5,10,20,100]

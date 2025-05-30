@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
 
 ### ----- 1. データ読み込み & 前処理 -----
 df = pd.read_excel('/Users/yojihamanishi/Library/Mobile Documents/com~apple~CloudDocs/仕事/Database/Price_List.xlsx', sheet_name='Data Base')
@@ -13,7 +14,8 @@ df = df[
 ]
 
 # サイズ帯を件数ベースで等分割
-df['SizeBucket'], bins_used = pd.qcut(df['Size'], q=6, retbins=True, duplicates='drop')
+df['SizeBucket'] = pd.qcut(df['Size'], q=6)
+df['SizeBucket'] = df['SizeBucket'].astype(str)  # 表示を文字列化してわかりやすく
 
 # # 簡易エリアタグ
 # def area(branch):
@@ -137,6 +139,13 @@ fig = px.scatter(f, x='Size', y=rate_col,
                  })
 st.plotly_chart(fig, use_container_width=True)
 
+# ✅ 散布図の保存ボタン（この位置に追加）
+if st.button('Save scatter plot as PNG'):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"scatter_{timestamp}.png"
+    fig.write_image(filename, scale=2)
+    st.success(f'Scatter plot saved as {filename}')
+
 ### ----- 6. 箱ひげ -----
 fig2 = px.box(f[f['Brand']!='MeSpace'], x='Brand', y='PctDiff',
               points='all', title='Price Difference vs MeSpace',
@@ -166,6 +175,13 @@ for tr in fig2.data:
 
 st.plotly_chart(fig2, use_container_width=True)
 
+# ✅ 箱ひげ図の保存ボタン（この位置に追加）
+if st.button('Save box plot as PNG'):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"boxplot_{timestamp}.png"
+    fig2.write_image(filename, scale=2)
+    st.success(f'Box plot saved as {filename}')
+
 ### ----- 7. Top5 テーブル & 画像保存 -----
 col1, col2 = st.columns(2)
 with col1:
@@ -192,11 +208,6 @@ with col2:
             'PctDiff': '{:.1%}'
         })
     )
-
-# 保存ボタン
-if st.button('Save current scatter as PNG'):
-    fig.write_image('scatter_current.png', scale=2)
-    st.success('Saved to scatter_current.png')
 
 ### ----- 8. Full Comparison Table -----
 st.subheader('Full Comparison Table')

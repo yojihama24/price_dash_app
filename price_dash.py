@@ -4,6 +4,37 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
+# --- ユーザー別ログイン認証 ---
+users = {
+    "yoji": "hama1234",
+    "narisara": "ning1234",
+    "vasin": "tu1234",
+    "siravith": "mic1234"
+}
+
+# --- ユーザー認証 ---
+def check_login():
+    def on_login():
+        username = st.session_state["username"]
+        password = st.session_state["password"]
+        if username in users and users[username] == password:
+            st.session_state["authenticated"] = True
+            st.session_state["user"] = username
+        else:
+            st.session_state["authenticated"] = False
+
+    if "authenticated" not in st.session_state:
+        st.text_input("Username", key="username")
+        st.text_input("Password", type="password", on_change=on_login, key="password")
+        st.stop()
+    elif not st.session_state["authenticated"]:
+        st.text_input("Username", key="username")
+        st.text_input("Password", type="password", on_change=on_login, key="password")
+        st.warning("Incorrect username or password")
+        st.stop()
+
+check_login()
+
 ### ----- 1. データ読み込み & 前処理 -----
 df = pd.read_excel('/Users/yojihamanishi/Library/Mobile Documents/com~apple~CloudDocs/仕事/Database/Price_List.xlsx', sheet_name='Data Base')
 
@@ -25,6 +56,9 @@ df['SizeBucket'] = df['SizeBucket'].astype(str)  # 表示を文字列化して�
 #         if kw.lower() in branch.lower(): return 'Phuket'
 #     return 'Bangkok'
 # df['Area'] = df['Branch'].apply(area)
+
+# 👤 ユーザー表示
+st.sidebar.write(f"👤 Logged in as: {st.session_state.get('user', 'Unknown')}")
 
 ### ----- 2. SIDEBAR コントロール -----
 st.sidebar.header('Filters')

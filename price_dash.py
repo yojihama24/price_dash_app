@@ -2,6 +2,38 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
+
+# --- ユーザー別ログイン認証 ---
+users = {
+    "yoji": "hama1234",
+    "narisara": "ning1234",
+    "vasin": "tu1234",
+    "siravith": "mic1234"
+}
+
+# --- ユーザー認証 ---
+def check_login():
+    def on_login():
+        username = st.session_state["username"]
+        password = st.session_state["password"]
+        if username in users and users[username] == password:
+            st.session_state["authenticated"] = True
+            st.session_state["user"] = username
+        else:
+            st.session_state["authenticated"] = False
+
+    if "authenticated" not in st.session_state:
+        st.text_input("Username", key="username")
+        st.text_input("Password", type="password", on_change=on_login, key="password")
+        st.stop()
+    elif not st.session_state["authenticated"]:
+        st.text_input("Username", key="username")
+        st.text_input("Password", type="password", on_change=on_login, key="password")
+        st.warning("Incorrect username or password")
+        st.stop()
+
+check_login()
 
 ### ----- 1. データ読み込み & 前処理 -----
 df = pd.read_excel('/Users/yojihamanishi/Library/Mobile Documents/com~apple~CloudDocs/仕事/Database/Price_List.xlsx', sheet_name='Data Base')
@@ -12,10 +44,9 @@ df = df[
     (df['ARR (Lowest)'] <= 4000)
 ]
 
-# サイズ帯
-bins = [0,1,3,5,10,20,100]
-labels = ['<1','1-3','3-5','5-10','10-20','20+']
-df['SizeBucket'] = pd.cut(df['Size'], bins=bins, labels=labels)
+# サイズ帯を件数ベースで等分割
+df['SizeBucket'] = pd.qcut(df['Size'], q=6)
+df['SizeBucket'] = df['SizeBucket'].astype(str)  # 表示を文字列化してわかりやすく
 
 # # 簡易エリアタグ
 # def area(branch):
@@ -25,6 +56,9 @@ df['SizeBucket'] = pd.cut(df['Size'], bins=bins, labels=labels)
 #         if kw.lower() in branch.lower(): return 'Phuket'
 #     return 'Bangkok'
 # df['Area'] = df['Branch'].apply(area)
+
+# 👤 ユーザー表示
+st.sidebar.write(f"👤 Logged in as: {st.session_state.get('user', 'Unknown')}")
 
 ### ----- 2. SIDEBAR コントロール -----
 st.sidebar.header('Filters')
@@ -139,6 +173,13 @@ fig = px.scatter(f, x='Size', y=rate_col,
                  })
 st.plotly_chart(fig, use_container_width=True)
 
+# ✅ 散布図の保存ボタン（この位置に追加）
+if st.button('Save scatter plot as PNG'):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"scatter_{timestamp}.png"
+    fig.write_image(filename, scale=2)
+    st.success(f'Scatter plot saved as {filename}')
+
 ### ----- 6. 箱ひげ -----
 fig2 = px.box(f[f['Brand']!='MeSpace'], x='Brand', y='PctDiff',
               points='all', title='Price Difference vs MeSpace',
@@ -168,6 +209,13 @@ for tr in fig2.data:
 
 st.plotly_chart(fig2, use_container_width=True)
 
+# ✅ 箱ひげ図の保存ボタン（この位置に追加）
+if st.button('Save box plot as PNG'):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"boxplot_{timestamp}.png"
+    fig2.write_image(filename, scale=2)
+    st.success(f'Box plot saved as {filename}')
+
 ### ----- 7. Top5 テーブル & 画像保存 -----
 col1, col2 = st.columns(2)
 with col1:
@@ -194,11 +242,6 @@ with col2:
             'PctDiff': '{:.1%}'
         })
     )
-
-# 保存ボタン
-if st.button('Save current scatter as PNG'):
-    fig.write_image('scatter_current.png', scale=2)
-    st.success('Saved to scatter_current.png')
 
 ### ----- 8. Full Comparison Table -----
 st.subheader('Full Comparison Table')

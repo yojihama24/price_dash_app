@@ -36,7 +36,7 @@ def check_login():
 check_login()
 
 ### ----- 1. データ読み込み & 前処理 -----
-df = pd.read_excel('/Users/yojihamanishi/Library/Mobile Documents/com~apple~CloudDocs/仕事/Database/Price_List.xlsx', sheet_name='Data Base')
+df = pd.read_excel('Price_List.xlsx', sheet_name='Data Base')
 
 # 異常値除外
 df = df[

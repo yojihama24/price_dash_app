@@ -4,6 +4,25 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
+st.set_page_config(
+    page_title="MeSpace Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ツールバー（GitHub / Share / Star / ペンアイコン）を非表示にする
+st.markdown(
+    """
+    <style>
+    [data-testid="stToolbar"] { display: none !important; }
+    [data-testid="stDecoration"] { display: none !important; }
+    header { visibility: hidden; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # --- ユーザー別ログイン認証 ---
 users = {
     "yoji": "hama1234",
@@ -44,9 +63,12 @@ df = df[
     (df['ARR (Lowest)'] <= 4000)
 ]
 
-# サイズ帯を件数ベースで等分割
-df['SizeBucket'] = pd.qcut(df['Size'], q=6)
-df['SizeBucket'] = df['SizeBucket'].astype(str)  # 表示を文字列化してわかりやすく
+# サイズ帯を件数ベースで10等分（ラベルを明示）
+df['SizeBucket'], bins_used = pd.qcut(df['Size'], q=10, retbins=True, duplicates='drop')
+
+# ラベルを見やすい形式に変換（例：1.00–1.54㎡）
+labels = [f"{bins_used[i]:.2f}–{bins_used[i+1]:.2f}㎡" for i in range(len(bins_used)-1)]
+df['SizeBucket'] = pd.cut(df['Size'], bins=bins_used, labels=labels, include_lowest=True)
 
 # # 簡易エリアタグ
 # def area(branch):
@@ -56,6 +78,8 @@ df['SizeBucket'] = df['SizeBucket'].astype(str)  # 表示を文字列化して�
 #         if kw.lower() in branch.lower(): return 'Phuket'
 #     return 'Bangkok'
 # df['Area'] = df['Branch'].apply(area)
+
+st.sidebar.title("📦 Self Storage Price Dashboard")
 
 # 👤 ユーザー表示
 st.sidebar.write(f"👤 Logged in as: {st.session_state.get('user', 'Unknown')}")
@@ -171,6 +195,7 @@ fig = px.scatter(f, x='Size', y=rate_col,
                      'Leo': 'orange',
                      'REED': 'red'
                  })
+fig.update_layout(title='ARR per Size')
 st.plotly_chart(fig, use_container_width=True)
 
 # ✅ 散布図の保存ボタン（この位置に追加）
@@ -254,3 +279,12 @@ st.dataframe(
         'PctDiff': '{:.1%}'
     })
 )
+
+# ラベルとサイズ範囲を対応表として表示
+bin_table = pd.DataFrame({
+    'Label': labels,
+    'Min (㎡)': bins_used[:-1],
+    'Max (㎡)': bins_used[1:]
+})
+st.markdown("### 📏 Size bin edges:")
+st.dataframe(bin_table)

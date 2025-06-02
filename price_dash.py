@@ -25,10 +25,12 @@ st.markdown(
 
 # --- ユーザー別ログイン認証 ---
 users = {
-    "yoji": "hama1234",
-    "narisara": "ning1234",
-    "vasin": "tu1234",
-    "siravith": "mic1234"
+    "yoji": "hama53777",
+    "narisara": "ning43229",
+    "vasin": "tu83324",
+    "siravith": "mic87911",
+    "palida": "gift16800"
+    "nattamon": "ploy87992"
 }
 
 # --- ユーザー認証 ---

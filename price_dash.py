@@ -5,7 +5,7 @@ import plotly.express as px
 from datetime import datetime
 
 st.set_page_config(
-    page_title="MeSpace Dashboard",
+    page_title="Self Storage Price Dashboard",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"

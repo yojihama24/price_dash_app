@@ -196,7 +196,7 @@ fig = px.scatter(f, x='Size', y=rate_col,
                  'i-Store': 'blue',
                  'Leo': 'orange',
                  'REED': 'red',
-                 'Simulation': 'violet'
+                 'Simulation': '#EE82EE'
              })
 fig.update_layout(title='ARR per Size')
 st.plotly_chart(fig, use_container_width=True)
@@ -222,7 +222,7 @@ fig2 = px.box(f[f['Brand']!='MeSpace'], x='Brand', y='PctDiff',
                  'i-Store': 'blue',
                  'Leo': 'orange',
                  'REED': 'red',
-                 'Simulation': 'violet'
+                 'Simulation': '#EE82EE'
              })
 fig2.add_hline(y=0, line_dash='dash')
 fig2.update_yaxes(tickformat='.0%')

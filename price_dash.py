@@ -94,8 +94,8 @@ ac_options = st.sidebar.multiselect('A/C', df['A/C'].unique().tolist(),
                                     default=df['A/C'].unique().tolist())
 
 # Type フィルタ
-type_options = st.sidebar.multiselect('Type', df['Type'].unique().tolist(),
-                                      default=df['Type'].unique().tolist())
+type_options = st.sidebar.multiselect('Group', df['Group'].unique().tolist(),
+                                      default=df['Group'].unique().tolist())
 
 # ---------------------------------
 # Size range: number inputs + slider
@@ -166,7 +166,7 @@ rate_col = st.sidebar.radio('Rate column', ['ARR (Rack Rate)', 'ARR (Lowest)'])
 ### ----- 3. フィルタ反映 -----
 f = df[
     (df['A/C'].isin(ac_options)) &
-    (df['Type'].isin(type_options)) &
+    (df['Group'].isin(type_options)) &
     (df['Size'].between(*size_range)) &
     (df['Branch'].isin(branch_sel))
 ].copy()
@@ -186,6 +186,7 @@ fig = px.scatter(f, x='Size', y=rate_col,
                  hover_data={
                      'Branch': True,
                      'A/C': True,
+                     'Group': True,
                      'Type': True,
                      'Size': ':.2f',
                      rate_col: ':.2f',

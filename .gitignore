@@ -9,3 +9,4 @@ venv/
 # Streamlit artifacts
 *.png
 __pycache__/
+*.xlsx

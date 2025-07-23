@@ -59,6 +59,8 @@ check_login()
 ### ----- 1. データ読み込み & 前処理 -----
 df = pd.read_excel('Price_List.xlsx', sheet_name='Data Base')
 
+df['Brand'] = df['Brand'].str.strip()
+
 # 異常値除外
 df = df[
     (df['ARR (Rack Rate)']<=4000) &
@@ -71,6 +73,7 @@ df['SizeBucket'], bins_used = pd.qcut(df['Size'], q=10, retbins=True, duplicates
 # ラベルを見やすい形式に変換（例：1.00–1.54㎡）
 labels = [f"{bins_used[i]:.2f}–{bins_used[i+1]:.2f}㎡" for i in range(len(bins_used)-1)]
 df['SizeBucket'] = pd.cut(df['Size'], bins=bins_used, labels=labels, include_lowest=True)
+
 
 # # 簡易エリアタグ
 # def area(branch):
@@ -92,6 +95,9 @@ st.sidebar.header('Filters')
 # A/C フィルタ
 ac_options = st.sidebar.multiselect('A/C', df['A/C'].unique().tolist(),
                                     default=df['A/C'].unique().tolist())
+
+st.sidebar.markdown("---")
+ignore_ac = st.sidebar.checkbox("🔁 Compare to MeSpace ignoring A/C (optional)", value=False)
 
 # Type フィルタ
 type_options = st.sidebar.multiselect('Group', df['Group'].unique().tolist(),
@@ -172,17 +178,27 @@ f = df[
 ].copy()
 
 ### ----- 4. MeSpace 基準との差分 -----
-mespace_med = (
-    f[f['Brand']=='MeSpace']
-    .groupby(['SizeBucket','A/C'])[rate_col].median()
-    .rename('MeSpace_Median').reset_index()
-)
-f = f.merge(mespace_med,on=['SizeBucket','A/C'],how='left')
-f['PctDiff'] = (f[rate_col]-f['MeSpace_Median'])/f['MeSpace_Median']
+if ignore_ac:
+    mespace_med = (
+        f[f['Brand'] == 'MeSpace']
+        .groupby(['SizeBucket'])[rate_col].median()
+        .rename('MeSpace_Median').reset_index()
+    )
+    f = f.merge(mespace_med, on='SizeBucket', how='left')
+else:
+    mespace_med = (
+        f[f['Brand'] == 'MeSpace']
+        .groupby(['SizeBucket', 'A/C'])[rate_col].median()
+        .rename('MeSpace_Median').reset_index()
+    )
+    f = f.merge(mespace_med, on=['SizeBucket', 'A/C'], how='left')
+
+f['PctDiff'] = (f[rate_col] - f['MeSpace_Median']) / f['MeSpace_Median']
 
 ### ----- 5. 散布図 -----
 fig = px.scatter(f, x='Size', y=rate_col,
                  color='Brand', symbol='Brand',
+                 color_discrete_sequence=None,
                  hover_data={
                      'Branch': True,
                      'A/C': True,
@@ -193,12 +209,14 @@ fig = px.scatter(f, x='Size', y=rate_col,
                      'PctDiff': ':.1%'
                  },
                  color_discrete_map={
-                 'MeSpace': 'green',
-                 'i-Store': 'blue',
-                 'Leo': 'orange',
-                 'REED': 'red',
-                 'Simulation': '#EE82EE'
-             })
+                     'MeSpace': 'green',
+                     'i-Store': 'blue',
+                     'Leo': 'orange',
+                     'REED': 'red',
+                     'Pattaya Self Storage': 'purple',
+                     'SAFEBOX': '#EE82EE',
+                     'Simulation': 'gray'
+                 })
 fig.update_layout(title='ARR per Size')
 st.plotly_chart(fig, use_container_width=True)
 
@@ -213,18 +231,21 @@ if st.button('Save scatter plot as PNG'):
 fig2 = px.box(f[f['Brand']!='MeSpace'], x='Brand', y='PctDiff',
               points='all', title='Price Difference vs MeSpace',
               color='Brand',
+              color_discrete_sequence=None,
               hover_data={
                   'Size': ':.2f',
                   rate_col: ':.2f',
                   'PctDiff': ':.1%'
               },
               color_discrete_map={
-                 'MeSpace': 'green',
-                 'i-Store': 'blue',
-                 'Leo': 'orange',
-                 'REED': 'red',
-                 'Simulation': '#EE82EE'
-             })
+                  'MeSpace': 'green',
+                  'i-Store': 'blue',
+                  'Leo': 'orange',
+                  'REED': 'red',
+                  'Pattaya Self Storage': 'purple',
+                  'SAFEBOX': '#EE82EE',
+                  'Simulation': 'gray'
+              })
 fig2.add_hline(y=0, line_dash='dash')
 fig2.update_yaxes(tickformat='.0%')
 
